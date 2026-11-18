@@ -79,6 +79,12 @@ export interface FarmStep {
   time: string;
 }
 
+/** How risky a position is, from TVL and age: small and young protocols need a warning. */
+export interface RiskAssessment {
+  level: 'low' | 'medium' | 'high';
+  reason: string;
+}
+
 /** One row of board.json: the ranked board's row. */
 export interface BoardRow {
   rank: number;
@@ -102,6 +108,7 @@ export interface BoardRow {
     maturity_multiplier: number;
     age_days: number | null;
   };
+  risk: RiskAssessment;
   farm_steps: string[];
 }
 
@@ -256,6 +263,7 @@ export function buildBoard(snapshot: Snapshot, model: ModelConstants = MODEL): B
       maturity_multiplier: round4(s.maturityMult),
       age_days: s.age,
     },
+    risk: riskFor(s.p, s.age),
     farm_steps: farmSteps(s.p, s.age).map(stepText),
   }));
 }
@@ -349,6 +357,21 @@ export function farmSteps(p: SnapshotProtocol, age: number | null): FarmStep[] {
       time: '5 minutes',
     },
   ];
+}
+
+/** How risky a position is, from TVL and age: small and young protocols need a warning. */
+export function riskFor(p: SnapshotProtocol, age: number | null): RiskAssessment {
+  const tvl = p.tvl_usd;
+  const young = age === null || age < 90;
+  const small = tvl < 10_000_000;
+  const tiny = tvl < 1_000_000;
+  if (tiny || (small && young)) {
+    return { level: 'high', reason: 'tiny or young protocol: position can move the market and the token may never launch' };
+  }
+  if (small || young) {
+    return { level: 'medium', reason: 'small or young protocol: farm with capital you can afford to lock' };
+  }
+  return { level: 'low', reason: 'established TVL and known age: ordinary farm risk' };
 }
 
 /** The live-token protocols, by market cap, for the dashboard's Live token view. */

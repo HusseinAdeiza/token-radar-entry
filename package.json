@@ -1,0 +1,11 @@
+{
+  "name": "token-radar-entry",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Token launch radar entry for make.fun's token-radar-01 bounty",
+  "main": "main.ts",
+  "scripts": {
+    "start": "node --experimental-strip-types main.ts --input /input/snapshot.json --output /output",
+    "dev": "mkdir -p out && MAKEFUN_OUTPUT_DIR=out node --experimental-strip-types main.ts --input ../input/snapshot.json --output out"
+  }
+}
